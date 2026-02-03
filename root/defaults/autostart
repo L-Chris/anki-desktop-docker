@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Set HOME for launcher to find config
+export HOME=/config
+
+# Qt/Chromium environment variables for container compatibility
+export QTWEBENGINE_DISABLE_SANDBOX=1
+export QT_QPA_PLATFORM=xcb
+export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox --disable-gpu --disable-software-rasterizer"
+
+# Copy launcher to config on first run (launcher needs to write metadata alongside itself)
+LAUNCHER_DIR="/config/anki-launcher"
+if [ ! -f "$LAUNCHER_DIR/anki" ]; then
+    echo "[INFO] First run - copying Anki launcher to persistent storage..."
+    mkdir -p "$LAUNCHER_DIR"
+    cp -a /opt/anki-launcher-staging/. "$LAUNCHER_DIR/"
+    chmod +x "$LAUNCHER_DIR/anki"
+fi
+
+# Create .python-version if missing (launcher requires this)
+if [ ! -f "$LAUNCHER_DIR/.python-version" ]; then
+    echo "[INFO] Creating .python-version file..."
+    # Get system Python version
+    PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")')
+    echo "$PYTHON_VERSION" > "$LAUNCHER_DIR/.python-version"
+fi
+
+# Configure sync server if environment variable is set
+if [ -n "$ANKI_SYNC_SERVER" ]; then
+    mkdir -p /config/.local/share/Anki2
+    cat > /config/.local/share/Anki2/prefs21.toml << EOF
+[sync]
+endpoint = "$ANKI_SYNC_SERVER"
+EOF
+    echo "[INFO] Anki sync server configured: $ANKI_SYNC_SERVER"
+fi
+
+# Launch Anki via launcher
+exec "$LAUNCHER_DIR/anki" 2>/dev/null

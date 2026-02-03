@@ -1,0 +1,31 @@
+services:
+  anki-desktop:
+    image: chrislongros/anki-desktop:latest
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: anki-desktop
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      # Optional: Custom sync server
+      # - ANKI_SYNC_SERVER=http://your-sync-server:8080
+      # Optional: CJK font support (uncomment to enable)
+      # - DOCKER_MODS=linuxserver/mods:universal-package-install
+      # - INSTALL_PACKAGES=fonts-arphic-ukai|fonts-arphic-uming|fonts-ipafont-mincho|fonts-ipafont-gothic|fonts-unfonts-core
+    volumes:
+      # Anki data persistence
+      - ./anki_data:/config
+    ports:
+      # KasmVNC web interface
+      - 3000:3000
+      # HTTPS (optional)
+      - 3001:3001
+      # AnkiConnect API (if addon installed)
+      - 8765:8765
+    restart: unless-stopped
+    # Required for Anki/Qt
+    security_opt:
+      - seccomp=unconfined
+    shm_size: "1gb"
