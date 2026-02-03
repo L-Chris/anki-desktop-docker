@@ -90,8 +90,12 @@ RUN \
 # Copy application config
 COPY root/ /
 
-# Expose ports (KasmVNC default ports)
-EXPOSE 3000 3001
+# Expose ports: KasmVNC (3000/3001) + AnkiConnect (8765)
+EXPOSE 3000 3001 8765
+
+# Healthcheck - verify KasmVNC is responding
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -sf http://localhost:3000/ || exit 1
 
 # Volume for Anki data persistence
 VOLUME /config

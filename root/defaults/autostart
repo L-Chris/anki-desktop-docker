@@ -20,19 +20,42 @@ fi
 # Create .python-version if missing (launcher requires this)
 if [ ! -f "$LAUNCHER_DIR/.python-version" ]; then
     echo "[INFO] Creating .python-version file..."
-    # Get system Python version
     PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")')
     echo "$PYTHON_VERSION" > "$LAUNCHER_DIR/.python-version"
 fi
 
+# Configure Anki preferences
+mkdir -p /config/.local/share/Anki2
+PREFS_FILE="/config/.local/share/Anki2/prefs21.db"
+
 # Configure sync server if environment variable is set
 if [ -n "$ANKI_SYNC_SERVER" ]; then
-    mkdir -p /config/.local/share/Anki2
     cat > /config/.local/share/Anki2/prefs21.toml << EOF
 [sync]
 endpoint = "$ANKI_SYNC_SERVER"
 EOF
     echo "[INFO] Anki sync server configured: $ANKI_SYNC_SERVER"
+fi
+
+# Pre-configure AnkiConnect addon if ANKICONNECT_ENABLED is set
+if [ "${ANKICONNECT_ENABLED:-true}" = "true" ]; then
+    ADDON_DIR="/config/.local/share/Anki2/addons21/2055492159"
+    if [ ! -d "$ADDON_DIR" ]; then
+        echo "[INFO] AnkiConnect will be available after installing addon code: 2055492159"
+    else
+        # Configure AnkiConnect to listen on all interfaces
+        cat > "$ADDON_DIR/config.json" << EOF
+{
+    "apiKey": null,
+    "apiLogPath": null,
+    "ignoreOriginList": [],
+    "webBindAddress": "0.0.0.0",
+    "webBindPort": 8765,
+    "webCorsOriginList": ["*"]
+}
+EOF
+        echo "[INFO] AnkiConnect configured to listen on 0.0.0.0:8765"
+    fi
 fi
 
 # Launch Anki via launcher

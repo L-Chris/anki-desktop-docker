@@ -16,9 +16,22 @@ High-performance browser-accessible Anki Desktop using [LinuxServer's KasmVNC](h
 - 🆕 **Always Latest** - Uses Anki's official launcher to get the newest version on first run
 - 🌐 **Browser Access** - No VNC client needed, just open your browser
 - 🔄 **Custom Sync Server** - Configure your own Anki sync server via environment variable
+- 🔌 **AnkiConnect Ready** - Port 8765 exposed, auto-configured when addon installed
 - 📦 **Multi-arch** - Supports both amd64 and arm64 platforms
 - 🔒 **Secure** - Optional HTTPS support on port 3001
 - 💾 **Persistent Data** - Volume mount preserves Anki data AND downloaded program files
+- ❤️ **Healthcheck** - Built-in container health monitoring
+
+## Comparison with Other Projects
+
+| Feature | This Project | Others |
+|---------|--------------|--------|
+| Anki Version | **Always Latest** (via launcher) | Pinned to old versions (25.02.x) |
+| VNC Technology | **KasmVNC** (high performance) | noVNC (basic) |
+| AnkiConnect | **Pre-configured** | Manual setup |
+| Healthcheck | **✅ Built-in** | ❌ None |
+| Multi-arch | **✅ amd64 + arm64** | Often amd64 only |
+| Auto-updates | **✅ Via launcher** | Requires rebuild |
 
 ## Quick Start
 
@@ -122,6 +135,28 @@ cd anki-desktop-docker
 docker build -t anki-desktop .
 ```
 
+## TrueNAS SCALE Deployment
+
+For TrueNAS SCALE users, create a custom app with these settings:
+
+```yaml
+Container Image: chrislongros/anki-desktop:latest
+Security Context:
+  - seccomp: unconfined
+Resources:
+  - Shared Memory Size: 1Gi
+Ports:
+  - 3000:3000 (Web UI)
+  - 8765:8765 (AnkiConnect)
+Storage:
+  - Host Path or PVC → /config
+Environment:
+  - PUID: 1000
+  - PGID: 1000
+  - TZ: Europe/Berlin
+  - ANKI_SYNC_SERVER: http://your-sync-server:8080 (optional)
+```
+
 ## Technical Details
 
 ### Why KasmVNC?
@@ -159,11 +194,19 @@ Common fixes:
 - Reduce video quality for slower networks
 
 ### AnkiConnect
-AnkiConnect addon works but requires additional port mapping:
-```yaml
-ports:
-  - "3000:3000"
-  - "8765:8765"  # AnkiConnect
+
+AnkiConnect is **pre-configured** once installed. Port 8765 is already exposed.
+
+1. Open Anki in the browser
+2. Go to Tools → Add-ons → Get Add-ons
+3. Enter code: `2055492159`
+4. Restart Anki (right-click desktop → Anki)
+
+The addon is automatically configured to listen on `0.0.0.0:8765` with CORS enabled.
+
+Test it:
+```bash
+curl http://localhost:8765 -X POST -d '{"action": "version", "version": 6}'
 ```
 
 ## License
