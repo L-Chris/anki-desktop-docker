@@ -119,7 +119,9 @@ docker run -d \
 
 ## CJK Font Support
 
-To add Chinese, Japanese, or Korean font support:
+Chinese, Japanese, and Korean font support is built into the image by default via `fonts-noto-cjk`.
+
+If you need additional regional fonts, you can still install them with Docker Mods:
 
 ```yaml
 environment:

@@ -17,7 +17,8 @@ services:
       - TZ=Europe/Berlin
       # Optional: Custom sync server
       # - ANKI_SYNC_SERVER=http://your-sync-server:8080
-      # Optional: CJK font support (uncomment to enable)
+      # CJK fonts are built into the image by default.
+      # Optional: install additional regional fonts if needed.
       # - DOCKER_MODS=linuxserver/mods:universal-package-install
       # - INSTALL_PACKAGES=fonts-arphic-ukai|fonts-arphic-uming|fonts-ipafont-mincho|fonts-ipafont-gothic|fonts-unfonts-core
     volumes:

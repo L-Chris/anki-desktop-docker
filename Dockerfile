@@ -75,6 +75,7 @@ RUN \
         # Fonts
         fonts-liberation \
         fonts-noto \
+        fonts-noto-cjk \
         fonts-noto-color-emoji \
     && \
     echo "**** download Anki launcher ${ANKI_LAUNCHER_VERSION} to staging ****" && \
