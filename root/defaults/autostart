@@ -24,6 +24,40 @@ if [ ! -f "$LAUNCHER_DIR/.python-version" ]; then
     echo "$PYTHON_VERSION" > "$LAUNCHER_DIR/.python-version"
 fi
 
+# aarch64 + Debian Bookworm (glibc 2.36) compatibility fix:
+# pyqt6-qt6 >= 6.8.1 only provides manylinux_2_39_aarch64 wheels (requires glibc 2.39)
+# pyqt6-qt6 6.7.3 provides manylinux_2_28_aarch64 wheels (works with glibc 2.28+)
+# Fix: wrap uv.arm64 to patch aqt[qt] -> aqt[qt67] before resolution
+if [ "$(uname -m)" = "aarch64" ] && [ -f "$LAUNCHER_DIR/uv.arm64" ] && [ ! -f "$LAUNCHER_DIR/uv.arm64.real" ]; then
+    echo "[INFO] aarch64/glibc-2.36 detected: installing uv wrapper for Qt 6.7.3 compatibility..."
+    mv "$LAUNCHER_DIR/uv.arm64" "$LAUNCHER_DIR/uv.arm64.real"
+    cat > "$LAUNCHER_DIR/uv.arm64" << 'UVWRAPPER'
+#!/bin/bash
+# uv.arm64 wrapper: patches aqt[qt] -> aqt[qt67] so Anki installs pyqt6-qt6==6.7.3
+# (manylinux_2_28_aarch64) instead of pyqt6-qt6>=6.8.1 (manylinux_2_39_aarch64, needs glibc 2.39)
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+if [[ "$1" == "sync" ]]; then
+    for f in "$SCRIPT_DIR/pyproject.toml" "pyproject.toml"; do
+        if [ -f "$f" ]; then
+            python3 - "$f" << 'PYEOF'
+import re, sys
+path = sys.argv[1]
+with open(path) as fh: c = fh.read()
+c2 = re.sub(r'"aqt\[qt\]"', '"aqt[qt67]"', c)
+if c2 != c:
+    with open(path, 'w') as fh: fh.write(c2)
+    print('[INFO] Patched aqt[qt] -> aqt[qt67] for aarch64/glibc-2.36 compatibility')
+PYEOF
+            break
+        fi
+    done
+fi
+exec "$SCRIPT_DIR/uv.arm64.real" "$@"
+UVWRAPPER
+    chmod +x "$LAUNCHER_DIR/uv.arm64"
+    echo "[INFO] uv.arm64 wrapper installed for Qt 6.7.3 (manylinux_2_28_aarch64) support"
+fi
+
 # Configure Anki preferences
 mkdir -p /config/.local/share/Anki2/backups
 mkdir -p /config/.local/share/Anki2/addons21
