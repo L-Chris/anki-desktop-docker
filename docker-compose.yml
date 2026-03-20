@@ -4,6 +4,12 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
+      args:
+        # Use China mirrors for faster builds
+        USE_CHINA_MIRROR: "true"
+        # Uncomment to use local proxy
+        # HTTP_PROXY: "http://host.docker.internal:7890"
+        # HTTPS_PROXY: "http://host.docker.internal:7890"
     container_name: anki-desktop
     environment:
       - PUID=1000
